@@ -82,3 +82,14 @@ def save_predictions(df_with_predictions):
     except Exception as e:
         print(f"Error saving predictions: {e}")
         return False
+    
+def get_predicted_articles(threshold=0.5):
+    """Zwraca artykuły przewidziane jako interesujące"""
+    try:
+        if os.path.exists("articles_predicted.csv"):
+            df = pd.read_csv("articles_predicted.csv")
+            return df[df['predicted_prob'] > threshold]
+        return pd.DataFrame()
+    except Exception as e:
+        print(f"Error loading predicted articles: {e}")
+        return pd.DataFrame()

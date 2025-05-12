@@ -50,6 +50,29 @@ class NewsApp(BaseApp):
         
     def fetch_and_display(self, feed_name, feed_url):
         fetch_and_display(self, feed_name, feed_url)
+        
+    def show_filtered_articles(self):
+        from data.model_trainer import predict_articles
+        from tkinter import messagebox
+        import pandas as pd
+        
+        df, error = predict_articles()
+        
+        if error:
+            messagebox.showerror("Błąd", error)
+            return
+            
+        if df is None or len(df) == 0:
+            messagebox.showinfo("Informacja", "Brak artykułów do wyświetlenia.")
+            return
+        
+        interesting_df = df[df['predicted_prob'] > 0.7].sort_values('predicted_prob', ascending=False)
+        
+        if len(interesting_df) == 0:
+            messagebox.showinfo("Informacja", "Brak interesujących artykułów według modelu.")
+            return
+            
+        self.create_articles_view("Interesujące artykuły", interesting_df)
 
 
 if __name__ == "__main__":

@@ -5,3 +5,4 @@ articles.csv
 joblib
 links.txt
 __pycache__
+*.sh

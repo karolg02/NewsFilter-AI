@@ -235,3 +235,64 @@ def predict_articles():
         
     except Exception as e:
         return None, str(e)
+
+
+def predict_on_dataframe(df):
+    """Wykonuje predykcję na dataframe i zwraca df z dodatkową kolumną predicted_prob"""
+    import pandas as pd
+    import os
+    
+    # Próbuj najpierw odczytać istniejące predykcje
+    try:
+        if os.path.exists("articles_predicted.csv"):
+            df_predicted = pd.read_csv("articles_predicted.csv")
+            
+            # Znajdź pasujące artykuły po linku lub tytule
+            merged = pd.merge(
+                df, 
+                df_predicted[['link', 'predicted_prob']], 
+                on='link', 
+                how='left'
+            )
+            
+            # Jeśli udało się znaleźć predykcje, użyj ich
+            if 'predicted_prob' in merged.columns and not merged['predicted_prob'].isna().all():
+                return merged
+    except Exception as e:
+        print(f"Błąd podczas wczytywania predictions: {e}")
+    
+    # Jeśli nie udało się odczytać predykcji, spróbuj użyć modelu
+    try:
+        import pickle
+        import joblib
+        
+        if os.path.exists('model.pkl') and os.path.exists('vectorizer.pkl'):
+            try:
+                # Najpierw próbujemy z joblib (bardziej niezawodny)
+                model = joblib.load('model.pkl')
+                vectorizer = joblib.load('vectorizer.pkl')
+            except:
+                # Jeśli nie zadziałało, próbujemy standardowym pickle
+                with open('model.pkl', 'rb') as f:
+                    model = pickle.load(f)
+                with open('vectorizer.pkl', 'rb') as f:
+                    vectorizer = pickle.load(f)
+            
+            # Przygotuj dane
+            texts = df['title'].fillna('') + ' ' + df['summary'].fillna('')
+            
+            # Wektoryzuj teksty
+            X = vectorizer.transform(texts)
+            
+            # Wykonaj predykcję
+            predictions = model.predict_proba(X)[:, 1]
+            
+            # Dodaj predykcje do dataframe
+            df['predicted_prob'] = predictions
+            
+            return df
+    except Exception as e:
+        print(f"Error podczas predykcji: {e}")
+    
+    # Jeśli wszystko zawiedzie, zwróć oryginalny dataframe
+    return df

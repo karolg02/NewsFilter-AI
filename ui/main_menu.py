@@ -60,6 +60,16 @@ def create_main_menu(app):
     )
     train_btn.pack(side="left", padx=10, pady=10)
     
+    filter_btn = ctk.CTkButton(
+        main_buttons_frame,
+        text="🔍 Filtruj interesujące",
+        font=FONTS['button'],
+        fg_color=COLORS['accent'],
+        hover_color=COLORS['accent2'],
+        command=app.show_filtered_articles
+    )
+    filter_btn.pack(side="left", padx=10, pady=10)
+    
     sources_header = ctk.CTkLabel(
         app.main_container,
         text="Twoje źródła:",

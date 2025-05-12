@@ -42,6 +42,17 @@ def parse_feed(url, source_name=None):
         return []
 
 
+def fetch_feed(url):
+    """Pobiera dane z pojedynczego źródła RSS i zwraca DataFrame"""
+    import pandas as pd
+    
+    articles = parse_feed(url)
+    if articles:
+        return pd.DataFrame(articles)
+    else:
+        return pd.DataFrame(columns=["title", "summary", "link", "date", "source"])
+
+
 def download_feeds_to_dataframe(feeds):
     import pandas as pd
     

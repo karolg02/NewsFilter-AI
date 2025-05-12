@@ -53,6 +53,14 @@ def create_articles_view(app, feed_name, df_filtered):
     )
     search_entry.pack(side='left', pady=10, padx=(0, 10), fill='x', expand=True)
     
+    sort_btn = ctk.CTkButton(
+        search_frame,
+        text="Sortuj wg AI",
+        command=lambda: refresh_articles(df_filtered.sort_values('predicted_prob', ascending=False) 
+                      if 'predicted_prob' in df_filtered.columns else df_filtered)
+    )
+    sort_btn.pack(side='right', pady=10, padx=10)
+    
     articles_frame = ctk.CTkScrollableFrame(
         app.main_container,
         fg_color=COLORS['bg_primary'],
@@ -61,7 +69,7 @@ def create_articles_view(app, feed_name, df_filtered):
     )
     articles_frame.pack(fill='both', expand=True, padx=20, pady=10)
     
-    def refresh_articles():
+    def refresh_articles(filtered_df=None):
         for widget in articles_frame.winfo_children():
             widget.destroy()
         
@@ -71,6 +79,9 @@ def create_articles_view(app, feed_name, df_filtered):
             filtered = df_filtered[df_filtered['title'].str.lower().str.contains(query)]
         else:
             filtered = df_filtered
+        
+        if filtered_df is not None:
+            filtered = filtered_df
         
         if filtered.empty:
             no_results = ctk.CTkLabel(
@@ -99,8 +110,24 @@ def create_articles_view(app, feed_name, df_filtered):
             )
             date_label.pack(anchor='w', padx=15, pady=(10, 0))
             
-            article_btn = ctk.CTkButton(
+            title_frame = ctk.CTkFrame(
                 article_frame,
+                fg_color="transparent"
+            )
+            title_frame.pack(fill='x', pady=(5, 0), padx=10)
+            
+            if 'predicted_prob' in row and row['predicted_prob'] > 0.7:
+                ai_label = ctk.CTkLabel(
+                    title_frame,
+                    text="proponowane poprzez AI",
+                    font=("Helvetica", 9),
+                    text_color="#4CAF50",  # zielony kolor
+                    padx=5
+                )
+                ai_label.pack(side="right", pady=(0, 0))
+            
+            article_btn = ctk.CTkButton(
+                title_frame,
                 text=row['title'],
                 font=FONTS['text'],
                 height=40,
@@ -112,6 +139,11 @@ def create_articles_view(app, feed_name, df_filtered):
             )
             article_btn.pack(fill='x', pady=(5, 10), padx=10)
             
+            if 'predicted_prob' in row:
+                prob = row['predicted_prob'] * 100
+                confidence = f" [AI: {prob:.0f}%]" if prob > 50 else ""
+                article_btn.configure(text=row['title'] + confidence)
+            
             article_frame.bind("<Button-1>", lambda e, r=row: app.show_article_details(r))
     
     search_var.trace_add("write", lambda *args: refresh_articles())
@@ -120,36 +152,28 @@ def create_articles_view(app, feed_name, df_filtered):
 
 
 def fetch_and_display(app, feed_name, feed_url):
+    """Pobiera i wyświetla artykuły z określonego źródła, filtrując przez model ML"""
     import pandas as pd
-    from tkinter import messagebox
+    from utils.feed import fetch_feed
     
-    app._clear_main_container()
-
-    loading_label = ctk.CTkLabel(
-        app.main_container,
-        text="Wczytuję artykuły...",
-        font=FONTS['header']
-    )
-    loading_label.pack(pady=50)
-    app.update()
+    df = fetch_feed(feed_url)
     
-    try:
-        df = pd.read_csv("articles.csv")
-        df_filtered = df[df['source'] == feed_name]
-        
-        if df_filtered.empty:
-            messagebox.showinfo("Informacja", 
-                               f"Brak artykułów dla źródła {feed_name}. Pobierz artykuły.")
-            app.create_main_menu()
-            return
-        
-        create_articles_view(app, feed_name, df_filtered)
-        
-    except FileNotFoundError:
-        messagebox.showerror("Błąd", 
-                            "Plik articles.csv nie istnieje. Pobierz artykuły.")
-        app.create_main_menu()
-    except Exception as e:
-        messagebox.showerror("Błąd", 
-                            f"Wystąpił problem podczas wczytywania artykułów: {str(e)}")
-        app.create_main_menu()
+    if df is not None and not df.empty:
+        # Tutaj dodajemy predykcję i filtrowanie
+        try:
+            from data.model_trainer import predict_on_dataframe
+            # Próba zastosowania modelu na danych
+            df_predicted = predict_on_dataframe(df)
+            if 'predicted_prob' in df_predicted.columns:
+                # Sortuj według przewidywań (najciekawsze na górze)
+                df = df_predicted.sort_values('predicted_prob', ascending=False)
+                # Możesz dodać również filtrowaie np.:
+                # df = df_predicted[df_predicted['predicted_prob'] > 0.5]
+        except:
+            # Jeśli model nie zadziała, pokazujemy dane bez filtrowania
+            pass
+            
+        app.create_articles_view(f"{feed_name} (filtrowane)", df)
+    else:
+        from tkinter import messagebox
+        messagebox.showerror("Błąd", f"Nie udało się pobrać danych z {feed_name}")
