@@ -12,6 +12,12 @@
 -  **Generowanie streszczeń** artykułów online
 -  **Przeszukiwanie tytułów** newsów
 
+## 📷 Zdjęcia
+
+![obraz](https://github.com/user-attachments/assets/9485f8c3-ed81-40d5-876d-52d60d9c1b42)
+![obraz](https://github.com/user-attachments/assets/d5ac1724-d905-413d-8bd8-4f4228eea259)
+![obraz](https://github.com/user-attachments/assets/df828646-1f16-44d8-b779-9cbb692168a7)
+![obraz](https://github.com/user-attachments/assets/205b4ae4-9a2b-4a86-a152-b5ab969f9154)
 
 ## 🧩 Instalacja
 - Pobranie repozytorium
