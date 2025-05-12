@@ -1,0 +1,8 @@
+customtkinter
+feedparser
+pandas
+beautifulsoup4
+joblib
+requests
+tkhtmlview
+Pillow
