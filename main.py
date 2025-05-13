@@ -66,7 +66,7 @@ class NewsApp(BaseApp):
             messagebox.showinfo("Informacja", "Brak artykułów do wyświetlenia.")
             return
         
-        interesting_df = df[df['predicted_prob'] > 0.7].sort_values('predicted_prob', ascending=False)
+        interesting_df = df[df['predicted_prob'] > 0.65].sort_values('predicted_prob', ascending=False)
         
         if len(interesting_df) == 0:
             messagebox.showinfo("Informacja", "Brak interesujących artykułów według modelu.")
